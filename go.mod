@@ -1,4 +1,4 @@
-module fiberpow
+module github.com/witer33/fiberpow
 
 go 1.18
 
