@@ -1,16 +1,19 @@
 package fiberpow
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/sha256"
 	_ "embed"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
-	"github.com/gofiber/fiber/v2"
-	"github.com/patrickmn/go-cache"
 	"math/big"
 	"strconv"
 	"time"
+
+	"github.com/go-redis/redis/v8"
+	"github.com/gofiber/fiber/v2"
 )
 
 //go:embed views/challenge.html
@@ -38,18 +41,19 @@ type Config struct {
 	Filter      func(*fiber.Ctx) bool
 	PowInterval time.Duration
 	Difficulty  int
+	RedisClient *redis.Client
 }
 
 // this stores individual information for an ip address.
 type ipStatus struct {
 	// if verified is true skip the pow check
-	verified bool
+	Verified bool `json:"verified"`
 	// secretNumber is the number that the user has to find
-	secretNumber int
+	SecretNumber int `json:"secretNumber"`
 	// secretSuffix is the hash suffix
-	secretSuffix string
+	SecretSuffix string `json:"secretSuffix"`
 	// hash is the hash given to the user
-	hash string
+	Hash string `json:"hash"`
 }
 
 // New initialize the middleware with the default config or a custom one.
@@ -69,8 +73,7 @@ func New(config ...Config) fiber.Handler {
 		cfg.Difficulty = 30000
 	}
 
-	// ipStatus storage.
-	ipCache := cache.New(cfg.PowInterval, 10*time.Second)
+	ctx := context.Background()
 
 	// Middleware handler.
 	return func(c *fiber.Ctx) error {
@@ -80,10 +83,10 @@ func New(config ...Config) fiber.Handler {
 		}
 
 		// Checks if ipStatus is already present for this ip.
-		statusInterface, found := ipCache.Get(c.IP())
-		var status *ipStatus
+		statusInterface, err := cfg.RedisClient.Get(ctx, c.IP()).Result()
+		var status ipStatus
 
-		if !found {
+		if err == redis.Nil {
 			// Generates a new ipStatus for this ip.
 			secretNumber, err := rand.Int(rand.Reader, big.NewInt(int64(cfg.Difficulty)))
 			if err != nil {
@@ -96,22 +99,36 @@ func New(config ...Config) fiber.Handler {
 				return err
 			}
 
-			status = &ipStatus{
-				verified:     false,
-				secretNumber: int(secretNumber.Int64()),
-				secretSuffix: secretSuffix,
+			status = ipStatus{
+				Verified:     false,
+				SecretNumber: int(secretNumber.Int64()),
+				SecretSuffix: secretSuffix,
 			}
 
 			// Generates the hash for the user.
-			byteHash := sha256.Sum256([]byte(fmt.Sprintf("%d-%s", status.secretNumber, status.secretSuffix)))
-			status.hash = hex.EncodeToString(byteHash[:])
-			ipCache.Set(c.IP(), status, cache.DefaultExpiration)
+			byteHash := sha256.Sum256([]byte(fmt.Sprintf("%d-%s", status.SecretNumber, status.SecretSuffix)))
+			status.Hash = hex.EncodeToString(byteHash[:])
+			encodedStatus, err := json.Marshal(status)
+
+			if err != nil {
+				return err
+			}
+
+			err = cfg.RedisClient.Set(ctx, c.IP(), string(encodedStatus), cfg.PowInterval).Err()
+			if err != nil {
+				return err
+			}
+		} else if err == nil {
+			err := json.Unmarshal([]byte(statusInterface), &status)
+			if err != nil {
+				return err
+			}
 		} else {
-			status = statusInterface.(*ipStatus)
+			return err
 		}
 
 		// Skips already verified ip.
-		if status.verified {
+		if status.Verified {
 			return c.Next()
 		}
 
@@ -122,13 +139,13 @@ func New(config ...Config) fiber.Handler {
 			secretNumber = -1
 		}
 
-		if secretNumber == status.secretNumber {
-			status.verified = true
+		if secretNumber == status.SecretNumber {
+			status.Verified = true
 			return c.Next()
 		}
 
 		// Renders the challenge template.
 		c.Set(fiber.HeaderContentType, fiber.MIMETextHTMLCharsetUTF8)
-		return c.SendString(fmt.Sprintf(challengeTemplate, status.hash, status.secretSuffix))
+		return c.SendString(fmt.Sprintf(challengeTemplate, status.Hash, status.SecretSuffix))
 	}
 }

@@ -2,11 +2,13 @@ package fiberpow
 
 import (
 	"fmt"
-	"github.com/gofiber/fiber/v2"
 	"math/rand"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/go-redis/redis/v8"
+	"github.com/gofiber/fiber/v2"
 )
 
 func TestMain(m *testing.M) {
@@ -15,7 +17,8 @@ func TestMain(m *testing.M) {
 	rand.Seed(time.Now().UnixNano())
 
 	app.Use(New(Config{
-		Difficulty: 20000,
+		Difficulty:  20000,
+		RedisClient: redis.NewClient(&redis.Options{Addr: "localhost:6379", Password: "", DB: 0}),
 	}))
 
 	taskCount := uint32(0)
