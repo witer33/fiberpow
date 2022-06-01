@@ -73,6 +73,10 @@ func New(config ...Config) fiber.Handler {
 		cfg.Difficulty = 30000
 	}
 
+	if cfg.RedisClient == nil {
+		panic("RedisClient is required")
+	}
+
 	ctx := context.Background()
 
 	// Middleware handler.
