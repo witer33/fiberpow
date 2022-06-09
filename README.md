@@ -28,10 +28,11 @@ Use this if you need to skip the PoW challenge in certain conditions, true equal
 go get github.com/witer33/fiberpow
 ```
 ## Usage
-### Default config
+### Basic config
 ```go
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/go-redis/redis/v8"
 	"github.com/witer33/fiberpow"
 )
 
@@ -39,7 +40,9 @@ func main() {
 
 	app := fiber.New()
 
-	app.Use(fiberpow.New())
+	app.Use(fiberpow.New(fiberpow.Config{
+		RedisClient: redis.NewClient(&redis.Options{Addr: "localhost:6379", Password: "", DB: 0}),
+	}))
 
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.SendString("Hello World")
@@ -55,6 +58,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/witer33/fiberpow"
+	"github.com/go-redis/redis/v8"
 )
 
 func main() {
@@ -67,6 +71,7 @@ func main() {
 		Filter: func(c *fiber.Ctx) bool {
 			return c.IP() == "127.0.0.1"
 		},
+		RedisClient: redis.NewClient(&redis.Options{Addr: "localhost:6379", Password: "", DB: 0}),
 	}))
 
 	app.Get("/", func(c *fiber.Ctx) error {
