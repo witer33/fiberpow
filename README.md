@@ -1,9 +1,8 @@
 # fiberpow
 
-Fiberpow is a [Fiber](https://github.com/gofiber/fiber) middleware, it's aim is blocking (or slowing) bots, by periodically asking clients for a Proof Of Work challenge.
+Fiberpow is a [Fiber](https://github.com/gofiber/fiber) middleware, it aims to block (or at least slow down) bots, by periodically asking clients for a proof of work challenge.
 
-### Config explaination
-
+## Config explaination
 #### Difficulty
 ```go
 int
@@ -17,11 +16,16 @@ time.Duration
 Interval between challenges for the same IP.
 
 #### Filter
-
 ```go
 func(c *fiber.Ctx) bool
 ```
 Use this if you need to skip the PoW challenge in certain conditions, true equals skip.
+
+#### Storage
+```go
+fiber.Storage
+```
+Database used to keep track of challenges, for reference use https://github.com/gofiber/storage.
 
 ## Installation
 ```
@@ -32,7 +36,7 @@ go get github.com/witer33/fiberpow
 ```go
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/go-redis/redis/v8"
+	"github.com/gofiber/storage/redis"
 	"github.com/witer33/fiberpow"
 )
 
@@ -41,7 +45,7 @@ func main() {
 	app := fiber.New()
 
 	app.Use(fiberpow.New(fiberpow.Config{
-		RedisClient: redis.NewClient(&redis.Options{Addr: "localhost:6379", Password: "", DB: 0}),
+		Storage: redis.New(),
 	}))
 
 	app.Get("/", func(c *fiber.Ctx) error {
@@ -58,7 +62,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/witer33/fiberpow"
-	"github.com/go-redis/redis/v8"
+	"github.com/gofiber/storage/redis"
 )
 
 func main() {
@@ -71,7 +75,7 @@ func main() {
 		Filter: func(c *fiber.Ctx) bool {
 			return c.IP() == "127.0.0.1"
 		},
-		RedisClient: redis.NewClient(&redis.Options{Addr: "localhost:6379", Password: "", DB: 0}),
+		Storage: redis.New(),
 	}))
 
 	app.Get("/", func(c *fiber.Ctx) error {

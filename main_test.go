@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-redis/redis/v8"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/storage/redis"
 )
 
 func TestMain(m *testing.M) {
@@ -17,8 +17,8 @@ func TestMain(m *testing.M) {
 	rand.Seed(time.Now().UnixNano())
 
 	app.Use(New(Config{
-		Difficulty:  20000,
-		RedisClient: redis.NewClient(&redis.Options{Addr: "localhost:6379", Password: "", DB: 0}),
+		Difficulty: 20000,
+		Storage:    redis.New(),
 	}))
 
 	taskCount := uint32(0)

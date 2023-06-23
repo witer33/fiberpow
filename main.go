@@ -1,7 +1,6 @@
 package fiberpow
 
 import (
-	"context"
 	"crypto/rand"
 	"crypto/sha256"
 	_ "embed"
@@ -12,7 +11,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-redis/redis/v8"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -44,7 +42,7 @@ type Config struct {
 	Filter      func(*fiber.Ctx) bool
 	PowInterval time.Duration
 	Difficulty  int
-	RedisClient *redis.Client
+	Storage     fiber.Storage
 }
 
 // this stores individual information for an ip address.
@@ -76,8 +74,6 @@ func New(config ...Config) fiber.Handler {
 		cfg.Difficulty = 30000
 	}
 
-	ctx := context.Background()
-
 	// Middleware handler.
 	return func(c *fiber.Ctx) error {
 		// Returns the sha256 JS framework if requested.
@@ -92,10 +88,10 @@ func New(config ...Config) fiber.Handler {
 		}
 
 		// Checks if ipStatus is already present for this ip.
-		statusInterface, err := cfg.RedisClient.Get(ctx, c.IP()).Result()
+		statusInterface, err := cfg.Storage.Get(c.IP())
 		var status ipStatus
 
-		if err == redis.Nil {
+		if statusInterface == nil && err == nil {
 			// Generates a new ipStatus for this ip.
 			secretNumber, err := rand.Int(rand.Reader, big.NewInt(int64(cfg.Difficulty)))
 			if err != nil {
@@ -123,12 +119,12 @@ func New(config ...Config) fiber.Handler {
 				return err
 			}
 
-			err = cfg.RedisClient.Set(ctx, c.IP(), string(encodedStatus), cfg.PowInterval).Err()
+			err = cfg.Storage.Set(c.IP(), encodedStatus, cfg.PowInterval)
 			if err != nil {
 				return err
 			}
 		} else if err == nil {
-			err := json.Unmarshal([]byte(statusInterface), &status)
+			err := json.Unmarshal(statusInterface, &status)
 			if err != nil {
 				return err
 			}
