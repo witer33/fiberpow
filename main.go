@@ -19,6 +19,9 @@ import (
 //go:embed views/challenge.html
 var challengeTemplate string
 
+//go:embed views/sha256.min.js
+var sha256Library string
+
 const chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 // Generates a random string using crypto/rand.
@@ -80,7 +83,7 @@ func New(config ...Config) fiber.Handler {
 		// Returns the sha256 JS framework if requested.
 		if c.Path() == "/sha256.min.js" {
 			c.Set(fiber.HeaderContentType, fiber.MIMETextJavaScriptCharsetUTF8)
-			return c.SendFile("views/sha256.min.js")
+			return c.SendString(sha256Library)
 		}
 
 		// Handles Config.Filter.
