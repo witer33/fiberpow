@@ -66,7 +66,7 @@ func New(config ...Config) fiber.Handler {
 	// Set default config.
 
 	if cfg.PowInterval == 0 {
-		cfg.PowInterval = time.Second * 20
+		cfg.PowInterval = time.Second * 120
 	}
 
 	if cfg.Difficulty == 0 {
@@ -77,6 +77,12 @@ func New(config ...Config) fiber.Handler {
 
 	// Middleware handler.
 	return func(c *fiber.Ctx) error {
+		// Returns the sha256 JS framework if requested.
+		if c.Path() == "/sha256.min.js" {
+			c.Set(fiber.HeaderContentType, fiber.MIMETextJavaScriptCharsetUTF8)
+			return c.SendFile("views/sha256.min.js")
+		}
+
 		// Handles Config.Filter.
 		if cfg.Filter != nil && cfg.Filter(c) {
 			return c.Next()
