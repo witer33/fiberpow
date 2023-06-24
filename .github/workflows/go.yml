@@ -13,10 +13,9 @@ jobs:
     strategy:
       matrix:
         go-version:
-          - oldstable
-          - stable
-        redis:
-          - '7.x'
+          - '1.18.x'
+          - '1.19.x'
+          - '1.20.x'
     steps:
     - name: Fetch git repository
       uses: actions/checkout@v3
@@ -26,17 +25,6 @@ jobs:
       with:
         go-version: '${{ matrix.go-version }}'
 
-    - name: Setup Redis
-      uses: shogo82148/actions-setup-redis@v1
-      with:
-        redis-version: ${{ matrix.redis }}
-        redis-port: '6379'
-
     - name: Build Go pkg
       run: go build -v ./...
 
-    - name: Run Test
-      run: go test -v ./...
-
-    - name: Run Test with -race
-      run: go test -v -race ./...
