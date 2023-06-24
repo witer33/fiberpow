@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/storage/redis"
+	"github.com/gofiber/storage/redis/v2"
 )
 
 func TestMain(m *testing.M) {

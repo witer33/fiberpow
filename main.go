@@ -99,7 +99,6 @@ func New(config ...Config) fiber.Handler {
 			}
 
 			secretSuffix, err := randString(32)
-
 			if err != nil {
 				return err
 			}
@@ -114,7 +113,6 @@ func New(config ...Config) fiber.Handler {
 			byteHash := sha256.Sum256([]byte(fmt.Sprintf("%d-%s", status.SecretNumber, status.SecretSuffix)))
 			status.Hash = hex.EncodeToString(byteHash[:])
 			encodedStatus, err := json.Marshal(status)
-
 			if err != nil {
 				return err
 			}
