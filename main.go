@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"math/big"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -76,12 +77,6 @@ func New(config ...Config) fiber.Handler {
 
 	// Middleware handler.
 	return func(c *fiber.Ctx) error {
-		// Returns the sha256 JS framework if requested.
-		if c.Path() == "/sha256.min.js" {
-			c.Set(fiber.HeaderContentType, fiber.MIMETextJavaScriptCharsetUTF8)
-			return c.SendString(sha256Library)
-		}
-
 		// Handles Config.Filter.
 		if cfg.Filter != nil && cfg.Filter(c) {
 			return c.Next()
@@ -133,6 +128,13 @@ func New(config ...Config) fiber.Handler {
 		// Skips already verified ip.
 		if status.Verified {
 			return c.Next()
+		}
+
+		// Returns the sha256 JS library if requested.
+		if strings.HasSuffix(c.Path(), "fiberpow.sha256.min.js") {
+			c.Set(fiber.HeaderContentType, fiber.MIMETextJavaScriptCharsetUTF8)
+			c.Set(fiber.HeaderCacheControl, "public, max-age=57600, immutable")
+			return c.SendString(sha256Library)
 		}
 
 		// Checks if the user already solved the challenge.
