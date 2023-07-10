@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/gofiber/fiber/v2 v2.47.0
-	github.com/gofiber/storage/redis/v2 v2.0.2
+	github.com/gofiber/storage/redis/v2 v2.0.3
 )
 
 require (
