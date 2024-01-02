@@ -36,12 +36,11 @@ go get github.com/witer33/fiberpow
 ```go
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/storage/redis"
+	"github.com/gofiber/storage/redis/v3"
 	"github.com/witer33/fiberpow"
 )
 
 func main() {
-
 	app := fiber.New()
 
 	app.Use(fiberpow.New(fiberpow.Config{
@@ -62,11 +61,10 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/witer33/fiberpow"
-	"github.com/gofiber/storage/redis"
+	"github.com/gofiber/storage/redis/v3"
 )
 
 func main() {
-
 	app := fiber.New()
 
 	app.Use(fiberpow.New(fiberpow.Config{
