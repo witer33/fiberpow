@@ -3,7 +3,7 @@ module github.com/witer33/fiberpow
 go 1.18
 
 require (
-	github.com/gofiber/fiber/v2 v2.52.6
+	github.com/gofiber/fiber/v2 v2.52.9
 	github.com/gofiber/storage/redis/v3 v3.1.2
 )
 
